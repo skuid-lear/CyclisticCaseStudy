@@ -1,0 +1,250 @@
+---
+title: "Cyclistic Bike Share Project"
+author: "Beatrice Desault-Alford"
+date: '2022-11-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+
+library(datasets)
+
+library(dplyr)
+```
+
+## Cyclistic Bike-Share: How does a Bike Share Navigate Speedy Success?
+
+```{r echo=FALSE}
+# Upload Divvy datasets 
+m5_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202105-divvy-tripdata.csv")
+m6_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202106-divvy-tripdata.csv")
+m7_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202107-divvy-tripdata.csv")
+m8_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202108-divvy-tripdata.csv")
+m9_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202109-divvy-tripdata.csv")
+m10_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202110-divvy-tripdata.csv")
+m11_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202111-divvy-tripdata.csv")
+m12_2021 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202112-divvy-tripdata.csv")
+m1_2022 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202201-divvy-tripdata.csv")
+m2_2022 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202202-divvy-tripdata.csv")
+m3_2022 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202203-divvy-tripdata.csv")
+m4_2022 <- read.csv("~/Desktop/Coursera_Capstone1_Csv_Files/202204-divvy-tripdata.csv")
+
+
+#join them into one file
+colnames(m5_2021)
+colnames(m6_2021)
+colnames(m7_2021)
+colnames(m8_2021)
+colnames(m9_2021)
+colnames(m10_2021)
+colnames(m11_2021)
+colnames(m12_2021)
+colnames(m1_2022)
+colnames(m2_2022)
+colnames(m3_2022)
+colnames(m4_2022)
+
+# Inspect the dataframes and look for incongruencies
+str(m5_2021)
+str(m6_2021)
+str(m7_2021)
+str(m8_2021)
+str(m9_2021)
+str(m10_2021)
+str(m11_2021)
+str(m12_2021)
+str(m1_2022)
+str(m2_2022)
+str(m3_2022)
+str(m4_2022)
+
+# Stack individual monthly data frames into one big data frame
+all_trips <- rbind(m5_2021, m6_2021, m7_2021, m8_2021, m9_2021, m10_2021, m11_2021, m12_2021, m1_2022, m2_2022, m3_2022, m4_2022)
+head(all_trips)
+
+rm(list = ls(pattern = "m*_20*"))
+```
+### **ASK**
+
+### Introduction: Who is Cyclistic ?
+
+Cyclistic is a bike-share program that sets itself apart by offering regular bikes as well as bikes with assistive options, such as reclining bikes, hand tricycles, and cargo bikes.
+In order to grow Cyclistic's bike-share service, its number of annual memberships needs to increase.
+
+### Casual Members vs. Annual Members
+
+Before designing a marketing campaign targeted at potential annual members, Cyclistic needs to use the data available to understand how differently casual members use their bike-share compared to annual members.
+
+
+
+
+### **PREPARE**
+
+### About the Data Sets
+
+In order to find out what the differences that existed between these the casual riders and the annual members, we used the following data:  
+12 months (May 2021-April 2022) of Cyclistic trip data made available by Motivate International Inc. 
+The data sets detail the the rides taken by the casual riders and annual members with the bikes available to them at various stations in Chicago.  
+
+The data is publicly available on <https://divvy-tripdata.s3.amazonaws.com/index.html> and stored in 12 csv files.  
+The data collected shows the ID number of each bike, the type of bike, the ID and name the stations where the rides start and end, the date, month, day, year and day of the week of each ride and finally, the ride length in seconds.
+The data is recent but the use pattern might have changed since. 
+
+
+ROCCC test of the data used:  
+Reliable: yes  
+Original: yes, probably  
+Comprehensive: yes  
+Current: yes  
+Cited: unknown  
+
+We used Rstudio  to clean, process and analyze the data sets.
+
+
+
+
+### **PROCESS**
+
+Documentation of any cleaning or manipulation of data
+git@github.com:<http://skuid-lear/Cyclistic-case-study.git>
+
+We used Studio to clean the data sets and rid it of nulls.
+
+```{r pressure, echo=FALSE}
+# Inspect the new table that has been created
+colnames(all_trips)  #List of column names
+nrow(all_trips) 
+dim(all_trips)
+head(all_trips)
+str(all_trips)
+summary(all_trips)
+
+# Begin by seeing how many observations fall under each usertype
+table(all_trips$member_casual)
+# Add columns that list the date, month, day, and year of each ride
+# This will allow us to aggregate ride data for each month, day, or year ... before completing these operations we could only aggregate at the ride level
+all_trips$date <- as.Date(all_trips$started_at) #The default format is yyyy-mm-dd
+all_trips$month <- format(as.Date(all_trips$date), "%m")
+all_trips$day <- format(as.Date(all_trips$date), "%d")
+all_trips$year <- format(as.Date(all_trips$date), "%Y")
+all_trips$day_of_week <- format(as.Date(all_trips$date), "%A")
+# Add a "ride_length" calculation to all_trips (in seconds)
+all_trips$ride_length <- difftime(all_trips$ended_at,all_trips$started_at)
+# Inspect the structure of the columns
+str(all_trips)
+# Convert "ride_length" from Factor to numeric so we can run calculations on the data
+is.factor(all_trips$ride_length)
+all_trips$ride_length <- as.numeric(as.character(all_trips$ride_length))
+is.numeric(all_trips$ride_length)
+
+# Remove unused columns
+all_trips <- all_trips[,!(colnames(all_trips) %in% c("start_lat", "start_lng", "end_lat", "end_lng", "ride_id"))]
+
+colnames(all_trips)
+
+#remove all negative values from the data set
+all_trips[all_trips < 0] <- NA
+
+# Remove "bad" data
+#only keep complete rows
+all_trips <- all_trips[complete.cases(all_trips),]
+#rides that were negative because the bikes were out for repair
+#we create a new data frame with data remaining
+all_trips_v2 <- all_trips[!(all_trips$start_station_name == "HQ QR" | is.na(all_trips$ride_length)),]
+colnames(all_trips_v2)
+```
+
+## **ANALYZE**
+
+### A Summary of our Analysis
+
+
+
+```{r}
+# Descriptive analysis on ride_length (all figures in seconds)
+mean(all_trips_v2$ride_length) #straight average (total ride length / rides)
+median(all_trips_v2$ride_length) #midpoint number in the ascending array of ride lengths
+max(all_trips_v2$ride_length) #longest ride
+min(all_trips_v2$ride_length) #shortest ride
+# You can condense the four lines above to one line using summary() on the specific attribute
+summary(all_trips_v2$ride_length)
+# Compare members and casual users
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = mean)
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = median)
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = max)
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = min)
+# See the average ride time by each day for members vs casual users
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$day_of_week, FUN = mean)
+# Arrange the days of the week in the right order
+all_trips_v2$day_of_week <- ordered(all_trips_v2$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+# Average ride each day of the week for members vs casual users
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$day_of_week, FUN = mean)
+# analyze ridership data by type and weekday
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%  #creates weekday field using wday()
+  group_by(member_casual, weekday) %>%  #groups by user type and weekday
+  summarise(number_of_rides = n()       #calculates the number of rides and average duration 
+  ,average_duration = mean(ride_length)) %>%      # calculates the average duration
+  arrange(member_casual, weekday)    # sorts
+
+```
+### **SHARE**
+
+### Visualizations and Key Findings
+
+Number of rides casual riders and members take each day of the week on average.
+
+And average length of rides by casual riders and members on each day of the week.
+
+```{r}
+# Visualization of the number of rides by rider type
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge")
+# Visualization by ride duration
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge")
+```
+
+### **ACT**  
+
+### Conclusion
+
+Based on our analysis, we conclude that two key differences between casual riders and member:  
+
+*   number of rides are greater for members from Monday to Thursday 
+
+*   length of rides are longer for casual riders every day of the week  
+    the longest rides during the week occur on Saturday and Sunday   
+    
+    
+It is difficult to draw more conclusions with the limited type of data provided.  
+Further analysis of the locations of the start and end stations where the bicycles are being picked up and dropped off might indicate further differences, such as business district versus parks and sightseeing routes. The average income might also differ depending on the locations and might require further analysis.
+
+
+### Recommendations  
+
+The marketing campaign can be mindful of the characteristics identified that differentiate casual riders from members.  
+
+A successful campaign will convert existing casual riders into members and recruit new members by  incorporating the conclusions of our analysis with an focus on the following strategies:
+
+*   attractive pricing, such as family or friends plans, monthly or yearly plans
+*   ease of subscription on boarding, such as one step sigh up with a QR code on the bikes
+*   membership benefits, such as bike check ups, member events
+    
+    
+
